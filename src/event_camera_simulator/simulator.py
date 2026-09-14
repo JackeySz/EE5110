@@ -78,7 +78,10 @@ class EventCameraSimulator:
         )
         self._reference_log_frame = updated_reference
 
-        background_events = self._noise_model.generate_background_events(previous_time, current_time)
+        background_events = self._noise_model.generate_background_events(
+            previous_time,
+            current_time,
+        )
         if ideal_events.size == 0:
             events = background_events
         elif background_events.size == 0:
