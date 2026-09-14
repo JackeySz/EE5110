@@ -22,9 +22,52 @@ git push origin feature/core-pixel-model feature/interpolation-noise \
 
 > 不要用 fork 模式。5 个人、一周时间，fork 会让同步成本翻倍；共享仓库 + 分支 + PR 就够了。
 
-### 保护 main
+### 认证：先把本机连上 GitHub
 
-`Settings → Branches → Add branch ruleset`（或 classic rule），Branch name pattern 填 `main`，勾选：
+GitHub 从 2021 年起**不再接受账号密码**做 git 推送，必须二选一。
+
+**A. SSH key（推荐，一次配好永久免密）**
+
+```bash
+ssh-keygen -t ed25519 -C "你的邮箱"
+cat ~/.ssh/id_ed25519.pub     # 复制整行输出
+```
+
+GitHub 网页 → `Settings → SSH and GPG keys → New SSH key` → 粘贴。验证：
+
+```bash
+ssh -T git@github.com        # 看到 "Hi <你的用户名>!" 即成功
+```
+
+用 SSH 就保持上面 remote 的 `git@github.com:...` 形式。
+
+**B. HTTPS + Personal Access Token**
+
+`Settings → Developer settings → Personal access tokens → Fine-grained tokens`：
+
+- Repository access: 只选这一个仓库
+- Permissions → Contents: **Read and write**
+
+生成的 `github_pat_...` 字符串**当作密码用**（macOS 会存进钥匙串）。remote 要改成 `https://github.com/...` 形式。
+
+### 保护 main（先看清套餐限制）
+
+> ⚠️ **私有仓库在 GitHub Free 套餐下，分支保护配置不生效**——能勾、能保存，但不会真正拦截。
+> 官方文档写明 protected branches 只在「公开仓库（Free）」或「Pro / Team / Enterprise 的私有仓库」强制执行。
+
+所以先选一条路：
+
+| 方案 | 私有 | 分支保护 | 代价 |
+|---|---|---|---|
+| **A. 私有仓 + GitHub Education**（推荐） | ✅ | ✅ 强制 | 要用学校邮箱申请，几分钟到几天 |
+| B. 公开仓 | ❌ | ✅ 强制 | 代码对外可见，可能被查重系统扫到 |
+| C. 私有仓 + Free | ✅ | ❌ 不强制 | CI 仍会在 PR 上显示红绿，但不能硬性拦截 |
+
+推荐 **A**：EE5110 在校生用学校邮箱申请 [GitHub Education](https://education.github.com) 可免费拿到 **Pro**，私有仓的分支保护就强制生效了。（注意：Education 给学生的是个人账号的 Pro；要 Team 得学校加入 GitHub Campus。）
+
+如果暂时走 C，就用团队约定兜底：**任何人不得直接 push main**，PR 上 CI 红了就不许合。虽然不能硬拦，但红叉看得见。
+
+配置路径（有权限时）：`Settings → Branches → Add branch ruleset`（或 classic rule），Branch name pattern 填 `main`，勾选：
 
 - [x] **Require a pull request before merging**
   - Required approvals: `1`
