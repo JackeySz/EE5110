@@ -42,7 +42,7 @@ target-version = "py39"
 select = ["E", "F", "I", "UP", "B"]
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.9"
 strict = true
 disallow_any_generics = false
 packages = ["event_camera_simulator"]
