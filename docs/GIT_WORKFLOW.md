@@ -174,26 +174,46 @@ mypy src
 
 ---
 
-## 6. 合并前必须先修的一个坑
+## 6. 已修复：CI 的 mypy 步骤原本是必红的
 
-**CI 的 `mypy src` 步骤当前必挂**，会把所有 PR 挡住。
+这个问题会把所有 PR 挡在门外，已经在 `main` 上修掉了。记录根因，避免有人再改回去。
 
-现象（本地复现）：
+### 现象
+
+本地跑 `mypy src`，两层报错叠在一起：
 
 ```text
+# 第一层：mypy 2.x 直接拒绝配置
 pyproject.toml: [mypy]: python_version: Python 3.9 is not supported (must be 3.10 or higher)
+
+# 第二层：换 mypy 1.x 后，轮到 numpy 存根报错
+.venv/.../numpy/__init__.pyi:737: error: Type statement is only supported in Python 3.12 and greater
 ```
 
-原因：`pyproject.toml` 里写死了 `python_version = "3.9"`，而 `mypy>=1.8` 会装到最新的 2.x，**2.x 已经不再支持以 3.9 作为检查目标**。CI 用的是 3.9 / 3.11 的 Python 解释器，但装的是最新版 mypy，所以同样会挂。
+### 根因
 
-两个修法，二选一（需要组长决定，改 `pyproject.toml` 属于跨模块的公共改动）：
+1. `pyproject.toml` 里写死 `python_version = "3.9"`，而 `mypy>=1.8` 会装到最新的 2.x，**2.x 不再支持以 3.9 作为检查目标**。
+2. 就算把 mypy 降到 1.x 绕开第一层，还是过不去：**numpy 2.5 的类型存根用了 PEP 695 的 `type` 语句，该语法要求目标版本 ≥ 3.12**。而 mypy 的 `--python-version` 无法覆盖配置文件里的报错——配置解析先失败。
 
-| 方案 | 改动 | 代价 |
-|---|---|---|
-| A. 锁 mypy 版本（推荐） | `pyproject.toml` 的 dev 依赖改成 `mypy>=1.8,<2.0` | 保留"支持 Python 3.9+"的声明，但用不到新版 mypy |
-| B. 抬高检查目标 | `python_version` 改成 `"3.11"`，同时 `requires-python` 改成 `>=3.11`，CI matrix 改成 `["3.11", "3.12"]` | 放弃 3.9 / 3.10 支持，但能用最新工具链 |
+也就是说，**"支持 Python 3.9" 和 "用新版 numpy 做严格类型检查" 这两件事无法同时成立**。注意 CI 装的是最新版 mypy 和最新版 numpy，所以 GitHub Actions 上一样必挂。
 
-推荐 **方案 A**：课程只要求 Python 3.9+，没必要为了工具链放弃兼容性声明。
+### 采用的修法
+
+只改 `pyproject.toml` 一行，`[tool.mypy]` 下：
+
+```toml
+python_version = "3.12"
+```
+
+`requires-python = ">=3.9"` 和 CI matrix `["3.9", "3.11"]` **都保持不变**，项目对外的兼容性声明不受影响。已验证 mypy 1.20 和 2.3.1 在 3.12 目标下都是 `Success: no issues found in 14 source files`。
+
+> **不要**改成锁 `mypy<2.0`——那只解决第一层，第二层照样挂。
+
+### 代价与兜底
+
+mypy 现在按 3.12 语义检查，因此**不会**帮你抓出"误用了 3.10+ 才有的语法"。兜底在 CI 的 pytest 那一步：3.9 解释器如果 import 不了某个文件会直接报错，所以运行时兼容性仍然有人看着。
+
+如果哪天想彻底严谨，可以再给 dev 依赖加个 `mypy<3.0` 的上限帽防未来版本反复，一行的事。
 
 ---
 
