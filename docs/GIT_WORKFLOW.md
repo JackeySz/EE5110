@@ -4,17 +4,27 @@
 
 ## 0. 一次性准备（组长做一次，其他人跳过）
 
-### 建仓库并推上去
+### 建仓库并推上去（已完成）
+
+仓库地址：**https://github.com/JackeySz/EE5110**（Private，Owner: `JackeySz`）
 
 ```bash
-cd event-camera-simulator
-git remote add origin git@github.com:<组织或用户名>/event-camera-simulator.git
-git push -u origin main
-git push origin feature/core-pixel-model feature/interpolation-noise \
-                feature/io-integration feature/tests feature/visualization
+git remote add origin git@github.com:JackeySz/EE5110.git
 ```
 
-用 **Private** 仓库。课程作业一般不需要公开，私有仓还能避免被查重系统误判。
+`main` 和 5 个 `feature/*` 分支都已推送。
+
+**队友直接克隆**，不要自己新建：
+
+```bash
+git clone git@github.com:JackeySz/EE5110.git
+cd EE5110
+git checkout feature/<你的分支>
+```
+
+> 注意仓库根目录名是 `EE5110`，不是 `event-camera-simulator`。Python 包名仍然是 `event_camera_simulator`，两者别混。
+
+克隆后建虚拟环境（见 `README.md` 的 Environment setup）。
 
 ### 加协作者
 
