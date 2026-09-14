@@ -1,0 +1,22 @@
+input:
+  fps_override: null
+
+sensor:
+  threshold_on: 0.30
+  threshold_off: 0.30
+  timestamp_resolution_us: 1
+  log_epsilon: 0.001
+
+noise:
+  enabled: true
+  threshold_std: 0.03
+  leak_rate_hz: 0.1
+  hot_pixel_ratio: 0.0001
+  hot_pixel_rate_hz: 50.0
+  seed: 42
+
+visualization:
+  accumulation_us: 10000
+  overlay_input: true
+  positive_color_bgr: [0, 0, 255]
+  negative_color_bgr: [255, 0, 0]
