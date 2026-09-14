@@ -1,7 +1,5 @@
 """Analytical crossing-time interpolation and timestamp quantization."""
 
-from typing import cast
-
 import numpy as np
 
 
@@ -80,4 +78,4 @@ def quantize_timestamps_us(times_seconds: np.ndarray, resolution_us: int) -> np.
     info = np.iinfo(np.int64)
     if np.any(quantized < info.min) or np.any(quantized > info.max):
         raise OverflowError("quantized timestamps do not fit in int64 microseconds")
-    return cast(np.ndarray, quantized.astype(np.int64))
+    return quantized.astype(np.int64)

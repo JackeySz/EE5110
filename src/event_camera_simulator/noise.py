@@ -1,7 +1,7 @@
 """Reproducible threshold mismatch and background-event noise models."""
 
 import math
-from typing import Optional, Protocol, cast
+from typing import Optional, Protocol
 
 import numpy as np
 
@@ -242,4 +242,4 @@ class ConfiguredNoiseModel:
         if events.size == 0:
             return empty_events()
         order = np.lexsort((events["p"], events["x"], events["y"], events["t"]))
-        return cast(np.ndarray, events[order])
+        return events[order]
