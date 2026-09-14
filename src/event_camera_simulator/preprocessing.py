@@ -52,7 +52,7 @@ def to_grayscale(frames: np.ndarray) -> np.ndarray:
 
     values = array.astype(np.float64, copy=False)
     grayscale = 0.114 * values[..., 0] + 0.587 * values[..., 1] + 0.299 * values[..., 2]
-    return cast(np.ndarray, grayscale)
+    return grayscale
 
 
 def normalize_intensity(frames: np.ndarray, input_max: Optional[float] = None) -> np.ndarray:

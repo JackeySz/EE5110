@@ -6,6 +6,10 @@ from pathlib import Path
 from typing import Optional
 
 from .config import ConfigError, load_config
+from .event_io import save_events_npz
+from .preprocessing import normalize_intensity, to_grayscale, to_log_intensity
+from .simulator import EventCameraSimulator
+from .video_io import VideoIOError, read_video
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -42,11 +46,23 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         return 0
 
     if args.command == "simulate":
-        del config  # Loaded and validated; orchestration lands in the integration task.
-        raise NotImplementedError(
-            "simulation pipeline is intentionally unimplemented in the scaffold; "
-            "see tasks/io_integration.md"
-        )
+        try:
+            video = read_video(args.input, config.input.fps_override)
+            grayscale = to_grayscale(video.frames)
+            normalized = normalize_intensity(grayscale)
+            log_frames = to_log_intensity(normalized, config.sensor.log_epsilon)
+            simulator = EventCameraSimulator(config.sensor, config.noise)
+            events = simulator.simulate(log_frames, video.timestamps)
+            save_events_npz(args.events, events)
+        except (OSError, ValueError, TypeError, RuntimeError, VideoIOError) as exc:
+            parser.error(str(exc))
+        if args.video is not None:
+            raise NotImplementedError(
+                "overlay video output is assigned to the visualization task; "
+                "events were saved successfully"
+            )
+        print(f"Saved {events.size} events to {args.events}")
+        return 0
 
     parser.error(f"unknown command: {args.command}")
     return 2

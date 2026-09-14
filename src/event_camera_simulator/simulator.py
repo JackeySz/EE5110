@@ -5,18 +5,21 @@ from typing import Optional
 import numpy as np
 
 from .config import NoiseConfig, SensorConfig
+from .noise import ConfiguredNoiseModel
+from .pixel_model import _detect_array_crossings
+from .types import empty_events, validate_events
 
 
 class EventCameraSimulator:
-    """Coordinate frame intervals, pixel state, timing, and optional noise.
-
-    Core event generation remains intentionally unimplemented in the scaffold.
-    """
+    """Coordinate frame intervals, pixel state, timing, and optional noise."""
 
     def __init__(self, sensor_config: SensorConfig, noise_config: NoiseConfig) -> None:
         self.sensor_config = sensor_config
         self.noise_config = noise_config
         self._reference_log_frame: Optional[np.ndarray] = None
+        self._noise_model = ConfiguredNoiseModel(sensor_config, noise_config)
+        self._threshold_on_map: Optional[np.ndarray] = None
+        self._threshold_off_map: Optional[np.ndarray] = None
 
     @property
     def is_initialized(self) -> bool:
@@ -37,6 +40,9 @@ class EventCameraSimulator:
         if not np.all(np.isfinite(frame)):
             raise ValueError("initial_log_frame must contain only finite values")
         self._reference_log_frame = frame.astype(np.float64, copy=True)
+        height, width = self._reference_log_frame.shape
+        self._noise_model.initialize(height, width)
+        self._threshold_on_map, self._threshold_off_map = self._noise_model.threshold_maps()
 
     def process_interval(
         self,
@@ -47,11 +53,44 @@ class EventCameraSimulator:
     ) -> np.ndarray:
         """Generate canonical events for one adjacent frame interval."""
 
-        if not self.is_initialized:
+        if (
+            self._reference_log_frame is None
+            or self._threshold_on_map is None
+            or self._threshold_off_map is None
+        ):
             raise RuntimeError("call reset() before process_interval()")
-        raise NotImplementedError(
-            "integration owner: compose pixel, interpolation, and noise modules"
+        previous = np.asarray(previous_log_frame)
+        current = np.asarray(current_log_frame)
+        if previous.shape != self._reference_log_frame.shape:
+            raise ValueError("previous_log_frame must match the initialized frame shape")
+        if current.shape != self._reference_log_frame.shape:
+            raise ValueError("current_log_frame must match the initialized frame shape")
+
+        ideal_events, updated_reference = _detect_array_crossings(
+            previous,
+            current,
+            previous_time,
+            current_time,
+            self._reference_log_frame,
+            self._threshold_on_map,
+            self._threshold_off_map,
+            self.sensor_config.timestamp_resolution_us,
         )
+        self._reference_log_frame = updated_reference
+
+        background_events = self._noise_model.generate_background_events(previous_time, current_time)
+        if ideal_events.size == 0:
+            events = background_events
+        elif background_events.size == 0:
+            events = ideal_events
+        else:
+            events = np.concatenate((ideal_events, background_events))
+        if events.size == 0:
+            return empty_events()
+        order = np.lexsort((events["p"], events["x"], events["y"], events["t"]))
+        sorted_events = events[order]
+        validate_events(sorted_events)
+        return sorted_events
 
     def simulate(self, log_frames: np.ndarray, timestamps: np.ndarray) -> np.ndarray:
         """Generate a complete event stream from timestamped log-intensity frames."""
@@ -69,6 +108,20 @@ class EventCameraSimulator:
         if not np.all(np.diff(times) > 0):
             raise ValueError("timestamps must be strictly increasing")
         self.reset(frames[0])
-        raise NotImplementedError(
-            "integration owner: iterate process_interval() and return sorted events"
-        )
+        event_chunks = [
+            self.process_interval(
+                frames[index - 1],
+                frames[index],
+                float(times[index - 1]),
+                float(times[index]),
+            )
+            for index in range(1, frames.shape[0])
+        ]
+        nonempty_chunks = [chunk for chunk in event_chunks if chunk.size > 0]
+        if not nonempty_chunks:
+            return empty_events()
+        events = np.concatenate(nonempty_chunks)
+        order = np.lexsort((events["p"], events["x"], events["y"], events["t"]))
+        sorted_events = events[order]
+        validate_events(sorted_events)
+        return sorted_events
