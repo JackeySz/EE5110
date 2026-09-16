@@ -49,7 +49,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         try:
             video = read_video(args.input, config.input.fps_override)
             grayscale = to_grayscale(video.frames)
-            normalized = normalize_intensity(grayscale)
+            normalized = normalize_intensity(grayscale, input_max=255.0)
             log_frames = to_log_intensity(normalized, config.sensor.log_epsilon)
             simulator = EventCameraSimulator(config.sensor, config.noise)
             events = simulator.simulate(log_frames, video.timestamps)
