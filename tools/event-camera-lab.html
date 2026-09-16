@@ -85,6 +85,19 @@
       flex-wrap: wrap;
       margin-top: 4px;
     }
+    #event-camera-lab .transport {
+      display: grid;
+      grid-template-columns: auto auto auto 1fr;
+      gap: 8px;
+      align-items: end;
+    }
+    #event-camera-lab .frame-readout {
+      font-size: 13px;
+      color: var(--muted);
+      padding-bottom: 9px;
+      text-align: right;
+      white-space: nowrap;
+    }
     #event-camera-lab button {
       border: 1px solid var(--line);
       background: #fff;
@@ -227,6 +240,22 @@
         Preview frame
         <input id="preview-index" type="range" min="0" max="0" value="0">
       </label>
+      <div class="transport">
+        <button id="previous-frame" type="button">Previous</button>
+        <button id="play" type="button">Play</button>
+        <button id="next-frame" type="button">Next</button>
+        <label>
+          Speed
+          <select id="play-speed">
+            <option value="0.25">0.25x</option>
+            <option value="0.5">0.5x</option>
+            <option value="1" selected>1x</option>
+            <option value="2">2x</option>
+            <option value="4">4x</option>
+          </select>
+        </label>
+        <div id="frame-readout" class="frame-readout">0 / 0</div>
+      </div>
       <div class="actions">
         <button id="run" class="primary" type="button">Run simulation</button>
         <button id="clear" type="button">Clear</button>
@@ -270,7 +299,8 @@
         events: [],
         width: 0,
         height: 0,
-        duration: 0
+        duration: 0,
+        playTimer: 0
       };
 
       function status(text, isError = false) {
@@ -293,6 +323,31 @@
         const imageData = context.createImageData(width, height);
         imageData.data.set(pixels);
         context.putImageData(imageData, 0, 0);
+      }
+
+      function stopPlayback() {
+        if (state.playTimer) {
+          window.clearInterval(state.playTimer);
+          state.playTimer = 0;
+        }
+        $("play").textContent = "Play";
+      }
+
+      function setFrame(index) {
+        if (!state.frames.length) return;
+        const maximum = state.frames.length - 1;
+        const clamped = Math.max(0, Math.min(maximum, index));
+        $("preview-index").value = String(clamped);
+        renderCurrentFrame();
+        makeDownloads();
+      }
+
+      function updateFrameReadout(frameIndex) {
+        if (!state.frames.length) {
+          $("frame-readout").textContent = "0 / 0";
+          return;
+        }
+        $("frame-readout").textContent = `${frameIndex + 1} / ${state.frames.length}`;
       }
 
       function grayscaleLogFromRgba(rgba, epsilon) {
@@ -446,6 +501,7 @@
         }
         drawImageData($("event-canvas"), eventPixels, width, height);
         drawImageData($("overlay-canvas"), overlayPixels, width, height);
+        updateFrameReadout(frameIndex);
       }
 
       function updateStats() {
@@ -495,7 +551,7 @@
           status("Simulating events...");
           state.events = simulateEvents(state.logs, state.times, state.width, state.height);
           $("preview-index").max = String(state.frames.length - 1);
-          $("preview-index").value = String(Math.max(0, state.frames.length - 1));
+          $("preview-index").value = "0";
           updateStats();
           renderCurrentFrame();
           makeDownloads();
@@ -508,6 +564,7 @@
       });
 
       $("preview-index").addEventListener("input", () => {
+        stopPlayback();
         renderCurrentFrame();
         makeDownloads();
       });
@@ -515,7 +572,45 @@
         renderCurrentFrame();
         makeDownloads();
       });
+      $("previous-frame").addEventListener("click", () => {
+        stopPlayback();
+        setFrame(Number($("preview-index").value) - 1);
+      });
+      $("next-frame").addEventListener("click", () => {
+        stopPlayback();
+        setFrame(Number($("preview-index").value) + 1);
+      });
+      $("play").addEventListener("click", () => {
+        if (!state.frames.length) {
+          status("Run the simulation before playback.", true);
+          return;
+        }
+        if (state.playTimer) {
+          stopPlayback();
+          return;
+        }
+        const sampleFps = Math.max(1, numberValue("sample-fps"));
+        const speed = Math.max(0.25, numberValue("play-speed"));
+        const intervalMs = Math.max(16, 1000 / (sampleFps * speed));
+        $("play").textContent = "Pause";
+        state.playTimer = window.setInterval(() => {
+          const current = Number($("preview-index").value);
+          const maximum = state.frames.length - 1;
+          if (current >= maximum) {
+            setFrame(0);
+          } else {
+            setFrame(current + 1);
+          }
+        }, intervalMs);
+      });
+      $("play-speed").addEventListener("change", () => {
+        if (state.playTimer) {
+          stopPlayback();
+          $("play").click();
+        }
+      });
       $("clear").addEventListener("click", () => {
+        stopPlayback();
         state.frames = [];
         state.logs = [];
         state.times = [];
@@ -527,6 +622,9 @@
           canvas.getContext("2d").clearRect(0, 0, 1, 1);
         }
         $("downloads").innerHTML = "";
+        $("preview-index").max = "0";
+        $("preview-index").value = "0";
+        updateFrameReadout(0);
         updateStats();
         status("Cleared. Upload an MP4, then run the simulation.");
       });
