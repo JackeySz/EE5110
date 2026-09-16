@@ -1,6 +1,6 @@
 """Stateful orchestration boundary for event generation."""
 
-from typing import Optional
+from typing import Optional, cast
 
 import numpy as np
 
@@ -93,7 +93,7 @@ class EventCameraSimulator:
         order = np.lexsort((events["p"], events["x"], events["y"], events["t"]))
         sorted_events = events[order]
         validate_events(sorted_events)
-        return sorted_events
+        return cast(np.ndarray, sorted_events)
 
     def simulate(self, log_frames: np.ndarray, timestamps: np.ndarray) -> np.ndarray:
         """Generate a complete event stream from timestamped log-intensity frames."""
@@ -127,4 +127,4 @@ class EventCameraSimulator:
         order = np.lexsort((events["p"], events["x"], events["y"], events["t"]))
         sorted_events = events[order]
         validate_events(sorted_events)
-        return sorted_events
+        return cast(np.ndarray, sorted_events)

@@ -4,7 +4,7 @@ Video frames are BGR at the OpenCV boundary. The mathematical pipeline uses
 floating-point grayscale arrays with shape (T, H, W).
 """
 
-from typing import Optional
+from typing import Optional, cast
 
 import numpy as np
 
@@ -52,7 +52,7 @@ def to_grayscale(frames: np.ndarray) -> np.ndarray:
 
     values = array.astype(np.float64, copy=False)
     grayscale = 0.114 * values[..., 0] + 0.587 * values[..., 1] + 0.299 * values[..., 2]
-    return grayscale
+    return cast(np.ndarray, grayscale)
 
 
 def normalize_intensity(frames: np.ndarray, input_max: Optional[float] = None) -> np.ndarray:
@@ -118,4 +118,4 @@ def to_log_intensity(frames: np.ndarray, epsilon: float) -> np.ndarray:
     result = np.log(values + epsilon_value)
     if not np.all(np.isfinite(result)):
         raise ValueError("log-intensity conversion produced non-finite values")
-    return result
+    return cast(np.ndarray, result)

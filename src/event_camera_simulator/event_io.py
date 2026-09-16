@@ -2,6 +2,7 @@
 
 import csv
 from pathlib import Path
+from typing import cast
 
 import numpy as np
 
@@ -31,7 +32,7 @@ def load_events_npz(path: Path) -> np.ndarray:
     if events.dtype != EVENT_DTYPE:
         raise TypeError(f"events must use EVENT_DTYPE, got {events.dtype!r}")
     validate_events(events)
-    return events
+    return cast(np.ndarray, events)
 
 
 def save_events_csv(path: Path, events: np.ndarray) -> None:
