@@ -569,7 +569,7 @@
 
       function stopPlayback() {
         if (state.playTimer) {
-          window.clearInterval(state.playTimer);
+          window.clearTimeout(state.playTimer);
           state.playTimer = 0;
         }
         setPlayButton(false);
@@ -581,6 +581,22 @@
         const clamped = Math.max(0, Math.min(maximum, index));
         $("preview-index").value = String(clamped);
         renderCurrentFrame();
+      }
+
+      function frameDelayMs(frameIndex) {
+        if (state.times.length < 2) return 1000 / Math.max(1, numberValue("sample-fps"));
+        const current = Math.max(0, Math.min(frameIndex, state.times.length - 1));
+        const next = current >= state.times.length - 1 ? 0 : current + 1;
+        let deltaSeconds;
+        if (next === 0) {
+          deltaSeconds = state.times[1] - state.times[0];
+        } else {
+          deltaSeconds = state.times[next] - state.times[current];
+        }
+        if (!Number.isFinite(deltaSeconds) || deltaSeconds <= 0) {
+          deltaSeconds = 1 / Math.max(1, numberValue("sample-fps"));
+        }
+        return Math.max(16, deltaSeconds * 1000);
       }
 
       function updateFrameReadout(frameIndex) {
@@ -994,11 +1010,10 @@
           stopPlayback();
           return;
         }
-        const sampleFps = Math.max(1, numberValue("sample-fps"));
         const speed = Math.max(0.25, numberValue("play-speed"));
-        const intervalMs = Math.max(16, 1000 / (sampleFps * speed));
         setPlayButton(true);
-        state.playTimer = window.setInterval(() => {
+        const tick = () => {
+          if (!state.playTimer) return;
           const current = Number($("preview-index").value);
           const maximum = state.frames.length - 1;
           if (current >= maximum) {
@@ -1006,7 +1021,10 @@
           } else {
             setFrame(current + 1);
           }
-        }, intervalMs);
+          const nextFrame = Number($("preview-index").value);
+          state.playTimer = window.setTimeout(tick, frameDelayMs(nextFrame) / speed);
+        };
+        state.playTimer = window.setTimeout(tick, frameDelayMs(Number($("preview-index").value)) / speed);
       });
       $("play-speed").addEventListener("change", () => {
         if (state.playTimer) {
