@@ -9,45 +9,97 @@
 <div id="event-camera-lab">
   <style>
     #event-camera-lab {
-      --bg: #f7f8fa;
+      --bg: #eef2f7;
       --panel: #ffffff;
       --ink: #171a1f;
       --muted: #68707c;
       --line: #d9dee7;
       --accent: #2563eb;
+      --accent-strong: #1d4ed8;
+      --soft: #f8fafc;
       --danger: #b91c1c;
       --on: #ff2b2b;
       --off: #1e5bff;
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: var(--ink);
-      background: var(--bg);
+      background:
+        radial-gradient(circle at 15% 0%, rgba(37, 99, 235, 0.12), transparent 28%),
+        linear-gradient(180deg, #f8fafc 0%, var(--bg) 100%);
       min-height: 100vh;
-      padding: 24px;
+      padding: 26px;
       box-sizing: border-box;
     }
     #event-camera-lab * {
       box-sizing: border-box;
     }
     #event-camera-lab h1 {
-      margin: 0 0 18px;
-      font-size: 24px;
+      margin: 0;
+      font-size: 28px;
       letter-spacing: 0;
+    }
+    #event-camera-lab .topbar {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+    #event-camera-lab .subtitle {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    #event-camera-lab .badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    #event-camera-lab .badge {
+      border: 1px solid rgba(37, 99, 235, 0.22);
+      background: rgba(37, 99, 235, 0.08);
+      color: var(--accent-strong);
+      border-radius: 999px;
+      padding: 6px 9px;
+      font-size: 12px;
+      font-weight: 650;
+      white-space: nowrap;
     }
     #event-camera-lab .layout {
       display: grid;
-      grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
-      gap: 18px;
+      grid-template-columns: minmax(300px, 390px) minmax(0, 1fr);
+      gap: 20px;
       align-items: start;
     }
     #event-camera-lab .panel {
       background: var(--panel);
       border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 16px;
+      border-radius: 10px;
+      padding: 18px;
+      box-shadow: 0 14px 35px rgba(15, 23, 42, 0.08);
     }
     #event-camera-lab .controls {
       display: grid;
-      gap: 12px;
+      gap: 14px;
+      position: sticky;
+      top: 18px;
+    }
+    #event-camera-lab .section-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 3px 0 -2px;
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 750;
+    }
+    #event-camera-lab .section-title::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
     }
     #event-camera-lab label {
       display: grid;
@@ -136,10 +188,19 @@
     #event-camera-lab input[type="number"],
     #event-camera-lab select {
       border: 1px solid var(--line);
-      border-radius: 6px;
-      padding: 8px 9px;
+      border-radius: 8px;
+      padding: 9px 10px;
       color: var(--ink);
       background: #fff;
+      outline: none;
+      transition: border-color 120ms ease, box-shadow 120ms ease;
+    }
+    #event-camera-lab input[type="number"]:focus,
+    #event-camera-lab select:focus,
+    #event-camera-lab input[type="file"]:focus-visible,
+    #event-camera-lab button:focus-visible {
+      border-color: rgba(37, 99, 235, 0.65);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
     }
     #event-camera-lab input[type="range"] {
       accent-color: var(--accent);
@@ -161,10 +222,13 @@
       gap: 10px;
     }
     #event-camera-lab .actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
       margin-top: 4px;
+    }
+    #event-camera-lab #run {
+      grid-column: 1 / -1;
     }
     #event-camera-lab .transport {
       display: grid;
@@ -183,9 +247,18 @@
       border: 1px solid var(--line);
       background: #fff;
       color: var(--ink);
-      border-radius: 6px;
-      padding: 8px 12px;
+      border-radius: 8px;
+      padding: 9px 12px;
       cursor: pointer;
+      font-weight: 650;
+      transition: transform 100ms ease, border-color 120ms ease, background 120ms ease;
+    }
+    #event-camera-lab button:hover:not(:disabled) {
+      border-color: #b9c2d1;
+      background: var(--soft);
+    }
+    #event-camera-lab button:active:not(:disabled) {
+      transform: translateY(1px);
     }
     #event-camera-lab button.primary {
       background: var(--accent);
@@ -196,10 +269,33 @@
       opacity: 0.55;
       cursor: not-allowed;
     }
+    #event-camera-lab .play-icon {
+      display: inline-block;
+      width: 0;
+      height: 0;
+      margin-right: 7px;
+      border-top: 6px solid transparent;
+      border-bottom: 6px solid transparent;
+      border-left: 10px solid currentColor;
+      vertical-align: -1px;
+    }
+    #event-camera-lab #play.is-playing .play-icon {
+      width: 11px;
+      height: 12px;
+      border: 0;
+      border-left: 4px solid currentColor;
+      border-right: 4px solid currentColor;
+      margin-right: 7px;
+      vertical-align: -1px;
+    }
     #event-camera-lab .status {
-      min-height: 20px;
+      min-height: 38px;
       font-size: 13px;
       color: var(--muted);
+      border: 1px solid var(--line);
+      background: var(--soft);
+      border-radius: 8px;
+      padding: 9px 10px;
     }
     #event-camera-lab .status.error {
       color: var(--danger);
@@ -212,14 +308,24 @@
     }
     #event-camera-lab .stat {
       border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 10px;
+      border-radius: 10px;
+      padding: 12px;
       background: #fff;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
     }
     #event-camera-lab .stat b {
       display: block;
-      font-size: 20px;
+      font-size: 22px;
       margin-bottom: 3px;
+    }
+    #event-camera-lab .stat:nth-child(2) b {
+      color: var(--on);
+    }
+    #event-camera-lab .stat:nth-child(3) b {
+      color: var(--off);
+    }
+    #event-camera-lab .stat:nth-child(4) b {
+      color: var(--accent-strong);
     }
     #event-camera-lab .stat span {
       font-size: 12px;
@@ -232,14 +338,16 @@
     }
     #event-camera-lab .canvas-wrap {
       border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 10px;
+      border-radius: 10px;
+      padding: 12px;
       background: #fff;
       min-width: 0;
+      box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06);
     }
     #event-camera-lab .canvas-title {
       font-size: 13px;
-      color: var(--muted);
+      color: var(--ink);
+      font-weight: 700;
       margin-bottom: 8px;
     }
     #event-camera-lab canvas,
@@ -248,7 +356,7 @@
       max-height: 360px;
       background: #000;
       display: block;
-      border-radius: 4px;
+      border-radius: 6px;
       image-rendering: pixelated;
     }
     #event-camera-lab video {
@@ -259,15 +367,18 @@
       gap: 10px;
       flex-wrap: wrap;
       margin-top: 14px;
+      align-items: center;
     }
+    #event-camera-lab .downloads button,
     #event-camera-lab a.download {
       border: 1px solid var(--line);
       color: var(--ink);
       text-decoration: none;
-      border-radius: 6px;
+      border-radius: 8px;
       padding: 8px 12px;
       background: #fff;
       font-size: 13px;
+      font-weight: 600;
     }
     @media (max-width: 900px) {
       #event-camera-lab .layout,
@@ -277,16 +388,38 @@
       #event-camera-lab .stats {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
+      #event-camera-lab .topbar {
+        align-items: start;
+        flex-direction: column;
+      }
+      #event-camera-lab .badges {
+        justify-content: flex-start;
+      }
+      #event-camera-lab .controls {
+        position: static;
+      }
     }
   </style>
 
-  <h1>Event Camera Lab</h1>
+  <header class="topbar">
+    <div>
+      <h1>Event Camera Lab</h1>
+      <p class="subtitle">Upload a video, tune thresholds, inspect events, and export overlays in the browser.</p>
+    </div>
+    <div class="badges" aria-label="Tool capabilities">
+      <span class="badge">ON/OFF events</span>
+      <span class="badge">Overlay preview</span>
+      <span class="badge">CSV / JSON / WebM</span>
+    </div>
+  </header>
   <div class="layout">
     <section class="panel controls">
+      <div class="section-title">Input</div>
       <label>
         <span class="label-line">MP4 video <span class="hint" tabindex="0" data-tip="Choose an MP4 or browser-supported video. Large/high-resolution videos are OK, but use lower Analysis width, Sampling FPS, or Max frames if processing is slow.">?</span></span>
         <input id="video-file" type="file" accept="video/mp4,video/*">
       </label>
+      <div class="section-title">Event model</div>
       <div class="row">
         <label>
           <span class="label-line">ON threshold <span class="hint" tabindex="0" data-tip="Brightness increase needed to fire an ON event. Lower values show more red events but can explode event count. If output is too dense or slow, raise this.">?</span></span>
@@ -299,6 +432,7 @@
           <span class="field-range"><input id="threshold-off-range" data-sync="threshold-off" type="range" min="0.01" max="1.50" step="0.01" value="0.30"><span class="range-note">0.01-1.50</span></span>
         </label>
       </div>
+      <div class="section-title">Sampling and performance</div>
       <div class="row">
         <label>
           <span class="label-line">Log epsilon <span class="hint" tabindex="0" data-tip="Small offset used in log(I + epsilon) to avoid log(0). Usually leave at 0.001. Larger values reduce sensitivity in dark regions.">?</span></span>
@@ -335,13 +469,14 @@
           <span class="field-range"><input id="export-limit-range" data-sync="export-limit" type="range" min="1000" max="2000000" step="1000" value="500000"><span class="range-note">1k-2M</span></span>
         </label>
       </div>
+      <div class="section-title">Playback</div>
       <label>
         <span class="label-line">Preview frame <span class="hint" tabindex="0" data-tip="Scrub through sampled frames after running. Dragging this pauses playback and updates input, event frame, and overlay together.">?</span></span>
         <input id="preview-index" type="range" min="0" max="0" value="0">
       </label>
       <div class="transport">
         <button id="previous-frame" type="button">Previous</button>
-        <button id="play" type="button">Play</button>
+        <button id="play" type="button"><span class="play-icon" aria-hidden="true"></span><span class="play-label">Play</span></button>
         <button id="next-frame" type="button">Next</button>
         <label>
           <span class="label-line">Speed <span class="hint" tabindex="0" data-tip="Playback speed for the preview canvases. If playback stutters, reduce speed, Sampling FPS, or Analysis width.">?</span></span>
@@ -357,6 +492,7 @@
       </div>
       <div class="actions">
         <button id="run" class="primary" type="button">Run simulation</button>
+        <button id="export-video" type="button" disabled>Export overlay video</button>
         <button id="clear" type="button">Clear</button>
       </div>
       <div id="status" class="status">Upload an MP4, then run the simulation.</div>
@@ -425,12 +561,18 @@
         context.putImageData(imageData, 0, 0);
       }
 
+      function setPlayButton(isPlaying) {
+        $("play").classList.toggle("is-playing", isPlaying);
+        $("play").querySelector(".play-label").textContent = isPlaying ? "Pause" : "Play";
+        $("play").setAttribute("aria-label", isPlaying ? "Pause playback" : "Start playback");
+      }
+
       function stopPlayback() {
         if (state.playTimer) {
           window.clearInterval(state.playTimer);
           state.playTimer = 0;
         }
-        $("play").textContent = "Play";
+        setPlayButton(false);
       }
 
       function setFrame(index) {
@@ -634,6 +776,10 @@
         $("event-rate").textContent = state.duration > 0 ? `${Math.round(total / state.duration).toLocaleString()}/s` : "0/s";
       }
 
+      function sleep(ms) {
+        return new Promise((resolve) => window.setTimeout(resolve, ms));
+      }
+
       function clearDownloadUrls() {
         for (const url of state.downloadUrls) {
           URL.revokeObjectURL(url);
@@ -703,6 +849,65 @@
           link.remove();
         });
         holder.appendChild(pngButton);
+
+        const videoButton = document.createElement("button");
+        videoButton.type = "button";
+        videoButton.textContent = "Download overlay video.webm";
+        videoButton.addEventListener("click", async () => {
+          try {
+            await exportOverlayVideo();
+          } catch (error) {
+            status(error instanceof Error ? error.message : String(error), true);
+          }
+        });
+        holder.appendChild(videoButton);
+      }
+
+      async function exportOverlayVideo() {
+        if (!state.frames.length) {
+          throw new Error("run the simulation before exporting video");
+        }
+        const canvas = $("overlay-canvas");
+        if (!canvas.captureStream || typeof MediaRecorder === "undefined") {
+          throw new Error("this browser cannot record canvas video; use Chrome or Edge");
+        }
+        stopPlayback();
+        const fps = Math.max(1, Math.min(60, numberValue("sample-fps")));
+        const stream = canvas.captureStream(fps);
+        const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
+          ? "video/webm;codecs=vp9"
+          : "video/webm";
+        const recorder = new MediaRecorder(stream, { mimeType });
+        const chunks = [];
+        recorder.addEventListener("dataavailable", (event) => {
+          if (event.data.size > 0) chunks.push(event.data);
+        });
+        const stopped = new Promise((resolve) => {
+          recorder.addEventListener("stop", resolve, { once: true });
+        });
+        recorder.start();
+        const intervalMs = Math.max(16, 1000 / fps);
+        status("Recording overlay video...");
+        for (let index = 0; index < state.frames.length; index += 1) {
+          $("preview-index").value = String(index);
+          renderCurrentFrame();
+          await sleep(intervalMs);
+        }
+        recorder.stop();
+        await stopped;
+        for (const track of stream.getTracks()) {
+          track.stop();
+        }
+        const blob = new Blob(chunks, { type: "video/webm" });
+        const url = URL.createObjectURL(blob);
+        state.downloadUrls.push(url);
+        const link = document.createElement("a");
+        link.download = "overlay-video.webm";
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        status("Overlay video exported as WebM.");
       }
 
       function syncRangeControls() {
@@ -756,6 +961,7 @@
           updateStats();
           renderCurrentFrame();
           makeDownloads();
+          $("export-video").disabled = false;
           status(`Done. Processed ${state.frames.length} sampled frames at ${state.width}x${state.height}.`);
         } catch (error) {
           status(error instanceof Error ? error.message : String(error), true);
@@ -791,7 +997,7 @@
         const sampleFps = Math.max(1, numberValue("sample-fps"));
         const speed = Math.max(0.25, numberValue("play-speed"));
         const intervalMs = Math.max(16, 1000 / (sampleFps * speed));
-        $("play").textContent = "Pause";
+        setPlayButton(true);
         state.playTimer = window.setInterval(() => {
           const current = Number($("preview-index").value);
           const maximum = state.frames.length - 1;
@@ -808,6 +1014,18 @@
           $("play").click();
         }
       });
+      $("export-video").addEventListener("click", async () => {
+        try {
+          $("export-video").disabled = true;
+          $("export-video").textContent = "Exporting...";
+          await exportOverlayVideo();
+        } catch (error) {
+          status(error instanceof Error ? error.message : String(error), true);
+        } finally {
+          $("export-video").disabled = state.frames.length === 0;
+          $("export-video").textContent = "Export overlay video";
+        }
+      });
       $("clear").addEventListener("click", () => {
         stopPlayback();
         clearDownloadUrls();
@@ -822,6 +1040,7 @@
           canvas.getContext("2d").clearRect(0, 0, 1, 1);
         }
         $("downloads").innerHTML = "";
+        $("export-video").disabled = true;
         $("preview-index").max = "0";
         $("preview-index").value = "0";
         updateFrameReadout(0);
