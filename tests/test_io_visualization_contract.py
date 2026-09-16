@@ -3,12 +3,14 @@
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 from event_camera_simulator.config import config_from_mapping
 from event_camera_simulator.event_frames import accumulate_event_frame
 from event_camera_simulator.event_io import load_events_npz, save_events_npz
 from event_camera_simulator.simulator import EventCameraSimulator
 from event_camera_simulator.types import EVENT_DTYPE, validate_events
+from event_camera_simulator.video_io import VideoIOError, read_video
 from event_camera_simulator.visualization import overlay_events, render_event_frame
 
 
@@ -132,3 +134,30 @@ def test_overlay_events_preserves_shape_and_blends_only_event_pixels() -> None:
     assert result.dtype == np.uint8
     assert result[0, 0].tolist() == [100, 100, 100]
     assert result[0, 1].tolist() == [50, 50, 178]
+
+
+def test_read_video_rejects_missing_file(tmp_path: Path) -> None:
+    missing = tmp_path / "missing.mp4"
+
+    with pytest.raises(VideoIOError, match="does not exist"):
+        read_video(missing)
+
+
+def test_read_video_reports_dimensions_and_timestamps(tmp_path: Path) -> None:
+    cv2 = pytest.importorskip("cv2")
+    path = tmp_path / "fixture.mp4"
+    frames = np.zeros((3, 8, 8, 3), dtype=np.uint8)
+    writer = cv2.VideoWriter(str(path), cv2.VideoWriter_fourcc(*"mp4v"), 10.0, (8, 8))
+    try:
+        for frame in frames:
+            writer.write(frame)
+    finally:
+        writer.release()
+
+    data = read_video(path)
+
+    assert data.frames.shape == (3, 8, 8, 3)
+    assert data.width == 8
+    assert data.height == 8
+    assert data.fps == pytest.approx(10.0)
+    np.testing.assert_allclose(data.timestamps, np.array([0.0, 0.1, 0.2]))
