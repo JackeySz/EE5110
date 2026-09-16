@@ -1,0 +1,837 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Event Camera Lab</title>
+</head>
+<body>
+<div id="event-camera-lab">
+  <style>
+    #event-camera-lab {
+      --bg: #f7f8fa;
+      --panel: #ffffff;
+      --ink: #171a1f;
+      --muted: #68707c;
+      --line: #d9dee7;
+      --accent: #2563eb;
+      --danger: #b91c1c;
+      --on: #ff2b2b;
+      --off: #1e5bff;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      min-height: 100vh;
+      padding: 24px;
+      box-sizing: border-box;
+    }
+    #event-camera-lab * {
+      box-sizing: border-box;
+    }
+    #event-camera-lab h1 {
+      margin: 0 0 18px;
+      font-size: 24px;
+      letter-spacing: 0;
+    }
+    #event-camera-lab .layout {
+      display: grid;
+      grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+    #event-camera-lab .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    #event-camera-lab .controls {
+      display: grid;
+      gap: 12px;
+    }
+    #event-camera-lab label {
+      display: grid;
+      gap: 5px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    #event-camera-lab .label-line {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+    #event-camera-lab .hint {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 17px;
+      height: 17px;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      color: var(--muted);
+      background: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1;
+      cursor: help;
+      flex: 0 0 auto;
+    }
+    #event-camera-lab .hint::after {
+      content: attr(data-tip);
+      position: absolute;
+      left: 50%;
+      bottom: calc(100% + 8px);
+      transform: translateX(-50%);
+      width: min(260px, 72vw);
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #111827;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 500;
+      line-height: 1.35;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 120ms ease, transform 120ms ease;
+      z-index: 20;
+      white-space: normal;
+    }
+    #event-camera-lab .hint::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: calc(100% + 3px);
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: #111827;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 120ms ease;
+      z-index: 21;
+    }
+    #event-camera-lab .hint:hover::after,
+    #event-camera-lab .hint:focus-visible::after {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-2px);
+    }
+    #event-camera-lab .hint:hover::before,
+    #event-camera-lab .hint:focus-visible::before {
+      opacity: 1;
+    }
+    #event-camera-lab input,
+    #event-camera-lab select,
+    #event-camera-lab button {
+      font: inherit;
+    }
+    #event-camera-lab input[type="number"],
+    #event-camera-lab input[type="range"],
+    #event-camera-lab input[type="file"],
+    #event-camera-lab select {
+      width: 100%;
+    }
+    #event-camera-lab input[type="number"],
+    #event-camera-lab select {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 8px 9px;
+      color: var(--ink);
+      background: #fff;
+    }
+    #event-camera-lab input[type="range"] {
+      accent-color: var(--accent);
+    }
+    #event-camera-lab .field-range {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    #event-camera-lab .range-note {
+      white-space: nowrap;
+    }
+    #event-camera-lab .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    #event-camera-lab .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+    #event-camera-lab .transport {
+      display: grid;
+      grid-template-columns: auto auto auto 1fr;
+      gap: 8px;
+      align-items: end;
+    }
+    #event-camera-lab .frame-readout {
+      font-size: 13px;
+      color: var(--muted);
+      padding-bottom: 9px;
+      text-align: right;
+      white-space: nowrap;
+    }
+    #event-camera-lab button {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      border-radius: 6px;
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+    #event-camera-lab button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    #event-camera-lab button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+    #event-camera-lab .status {
+      min-height: 20px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    #event-camera-lab .status.error {
+      color: var(--danger);
+    }
+    #event-camera-lab .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(100px, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    #event-camera-lab .stat {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: #fff;
+    }
+    #event-camera-lab .stat b {
+      display: block;
+      font-size: 20px;
+      margin-bottom: 3px;
+    }
+    #event-camera-lab .stat span {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    #event-camera-lab .preview-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    #event-camera-lab .canvas-wrap {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: #fff;
+      min-width: 0;
+    }
+    #event-camera-lab .canvas-title {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    #event-camera-lab canvas,
+    #event-camera-lab video {
+      width: 100%;
+      max-height: 360px;
+      background: #000;
+      display: block;
+      border-radius: 4px;
+      image-rendering: pixelated;
+    }
+    #event-camera-lab video {
+      display: none;
+    }
+    #event-camera-lab .downloads {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+    #event-camera-lab a.download {
+      border: 1px solid var(--line);
+      color: var(--ink);
+      text-decoration: none;
+      border-radius: 6px;
+      padding: 8px 12px;
+      background: #fff;
+      font-size: 13px;
+    }
+    @media (max-width: 900px) {
+      #event-camera-lab .layout,
+      #event-camera-lab .preview-grid {
+        grid-template-columns: 1fr;
+      }
+      #event-camera-lab .stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+  </style>
+
+  <h1>Event Camera Lab</h1>
+  <div class="layout">
+    <section class="panel controls">
+      <label>
+        <span class="label-line">MP4 video <span class="hint" tabindex="0" data-tip="Choose an MP4 or browser-supported video. Large/high-resolution videos are OK, but use lower Analysis width, Sampling FPS, or Max frames if processing is slow.">?</span></span>
+        <input id="video-file" type="file" accept="video/mp4,video/*">
+      </label>
+      <div class="row">
+        <label>
+          <span class="label-line">ON threshold <span class="hint" tabindex="0" data-tip="Brightness increase needed to fire an ON event. Lower values show more red events but can explode event count. If output is too dense or slow, raise this.">?</span></span>
+          <input id="threshold-on" type="number" min="0.01" step="0.01" value="0.30">
+          <span class="field-range"><input id="threshold-on-range" data-sync="threshold-on" type="range" min="0.01" max="1.50" step="0.01" value="0.30"><span class="range-note">0.01-1.50</span></span>
+        </label>
+        <label>
+          <span class="label-line">OFF threshold <span class="hint" tabindex="0" data-tip="Brightness decrease needed to fire an OFF event. Lower values show more blue events. Keep it near ON threshold unless you want asymmetric sensitivity.">?</span></span>
+          <input id="threshold-off" type="number" min="0.01" step="0.01" value="0.30">
+          <span class="field-range"><input id="threshold-off-range" data-sync="threshold-off" type="range" min="0.01" max="1.50" step="0.01" value="0.30"><span class="range-note">0.01-1.50</span></span>
+        </label>
+      </div>
+      <div class="row">
+        <label>
+          <span class="label-line">Log epsilon <span class="hint" tabindex="0" data-tip="Small offset used in log(I + epsilon) to avoid log(0). Usually leave at 0.001. Larger values reduce sensitivity in dark regions.">?</span></span>
+          <input id="epsilon" type="number" min="0.000001" step="0.001" value="0.001">
+          <span class="field-range"><input id="epsilon-range" data-sync="epsilon" type="range" min="0.000001" max="0.100000" step="0.001" value="0.001"><span class="range-note">0.000001-0.10</span></span>
+        </label>
+        <label>
+          <span class="label-line">Sampling FPS <span class="hint" tabindex="0" data-tip="How many video frames per second are sampled for simulation. 15 is smoother for big videos; 30 is a good default; higher values are slower.">?</span></span>
+          <input id="sample-fps" type="number" min="1" step="1" value="30">
+          <span class="field-range"><input id="sample-fps-range" data-sync="sample-fps" type="range" min="1" max="60" step="1" value="30"><span class="range-note">1-60</span></span>
+        </label>
+      </div>
+      <div class="row">
+        <label>
+          <span class="label-line">Max frames <span class="hint" tabindex="0" data-tip="Hard cap on sampled frames. Lower it for quick debugging; raise it for longer videos once parameters look right.">?</span></span>
+          <input id="max-frames" type="number" min="2" step="1" value="120">
+          <span class="field-range"><input id="max-frames-range" data-sync="max-frames" type="range" min="2" max="600" step="1" value="120"><span class="range-note">2-600</span></span>
+        </label>
+        <label>
+          <span class="label-line">Accumulation ms <span class="hint" tabindex="0" data-tip="Time window shown in each event frame. Smaller windows look sparse and sharp; larger windows reveal trails but can look crowded.">?</span></span>
+          <input id="window-ms" type="number" min="1" step="1" value="20">
+          <span class="field-range"><input id="window-ms-range" data-sync="window-ms" type="range" min="1" max="200" step="1" value="20"><span class="range-note">1-200 ms</span></span>
+        </label>
+      </div>
+      <div class="row">
+        <label>
+          <span class="label-line">Analysis width <span class="hint" tabindex="0" data-tip="Video is resized to this width before simulation. This is the biggest speed knob: try 240 or 320 for smooth use, 640 for more detail.">?</span></span>
+          <input id="analysis-width" type="number" min="64" step="16" value="320">
+          <span class="field-range"><input id="analysis-width-range" data-sync="analysis-width" type="range" min="64" max="960" step="16" value="320"><span class="range-note">64-960 px</span></span>
+        </label>
+        <label>
+          <span class="label-line">Event export limit <span class="hint" tabindex="0" data-tip="Maximum event count allowed for CSV/JSON export. If downloads are disabled, raise thresholds or reduce FPS/width/frames, then rerun.">?</span></span>
+          <input id="export-limit" type="number" min="1000" step="1000" value="500000">
+          <span class="field-range"><input id="export-limit-range" data-sync="export-limit" type="range" min="1000" max="2000000" step="1000" value="500000"><span class="range-note">1k-2M</span></span>
+        </label>
+      </div>
+      <label>
+        <span class="label-line">Preview frame <span class="hint" tabindex="0" data-tip="Scrub through sampled frames after running. Dragging this pauses playback and updates input, event frame, and overlay together.">?</span></span>
+        <input id="preview-index" type="range" min="0" max="0" value="0">
+      </label>
+      <div class="transport">
+        <button id="previous-frame" type="button">Previous</button>
+        <button id="play" type="button">Play</button>
+        <button id="next-frame" type="button">Next</button>
+        <label>
+          <span class="label-line">Speed <span class="hint" tabindex="0" data-tip="Playback speed for the preview canvases. If playback stutters, reduce speed, Sampling FPS, or Analysis width.">?</span></span>
+          <select id="play-speed">
+            <option value="0.25">0.25x</option>
+            <option value="0.5">0.5x</option>
+            <option value="1" selected>1x</option>
+            <option value="2">2x</option>
+            <option value="4">4x</option>
+          </select>
+        </label>
+        <div id="frame-readout" class="frame-readout">0 / 0</div>
+      </div>
+      <div class="actions">
+        <button id="run" class="primary" type="button">Run simulation</button>
+        <button id="clear" type="button">Clear</button>
+      </div>
+      <div id="status" class="status">Upload an MP4, then run the simulation.</div>
+    </section>
+
+    <main>
+      <div class="stats">
+        <div class="stat"><b id="total-events">0</b><span>Total events</span></div>
+        <div class="stat"><b id="on-events">0</b><span>ON events</span></div>
+        <div class="stat"><b id="off-events">0</b><span>OFF events</span></div>
+        <div class="stat"><b id="event-rate">0/s</b><span>Event rate</span></div>
+      </div>
+      <section class="preview-grid">
+        <div class="canvas-wrap">
+          <div class="canvas-title">Input frame</div>
+          <canvas id="input-canvas"></canvas>
+        </div>
+        <div class="canvas-wrap">
+          <div class="canvas-title">Event frame</div>
+          <canvas id="event-canvas"></canvas>
+        </div>
+        <div class="canvas-wrap">
+          <div class="canvas-title">Overlay</div>
+          <canvas id="overlay-canvas"></canvas>
+        </div>
+      </section>
+      <video id="video" muted playsinline></video>
+      <div id="downloads" class="downloads"></div>
+    </main>
+  </div>
+
+  <script>
+    (() => {
+      const $ = (id) => document.getElementById(id);
+      const state = {
+        frames: [],
+        logs: [],
+        times: [],
+        events: [],
+        width: 0,
+        height: 0,
+        duration: 0,
+        playTimer: 0,
+        downloadUrls: []
+      };
+
+      function status(text, isError = false) {
+        $("status").textContent = text;
+        $("status").classList.toggle("error", isError);
+      }
+
+      function numberValue(id) {
+        return Number($(id).value);
+      }
+
+      function setupCanvas(canvas, width, height) {
+        canvas.width = width;
+        canvas.height = height;
+      }
+
+      function drawImageData(canvas, pixels, width, height) {
+        setupCanvas(canvas, width, height);
+        const context = canvas.getContext("2d");
+        const imageData = context.createImageData(width, height);
+        imageData.data.set(pixels);
+        context.putImageData(imageData, 0, 0);
+      }
+
+      function stopPlayback() {
+        if (state.playTimer) {
+          window.clearInterval(state.playTimer);
+          state.playTimer = 0;
+        }
+        $("play").textContent = "Play";
+      }
+
+      function setFrame(index) {
+        if (!state.frames.length) return;
+        const maximum = state.frames.length - 1;
+        const clamped = Math.max(0, Math.min(maximum, index));
+        $("preview-index").value = String(clamped);
+        renderCurrentFrame();
+      }
+
+      function updateFrameReadout(frameIndex) {
+        if (!state.frames.length) {
+          $("frame-readout").textContent = "0 / 0";
+          return;
+        }
+        $("frame-readout").textContent = `${frameIndex + 1} / ${state.frames.length}`;
+      }
+
+      function grayscaleLogFromRgba(rgba, epsilon) {
+        const pixels = rgba.data;
+        const logFrame = new Float64Array(rgba.width * rgba.height);
+        for (let index = 0; index < logFrame.length; index += 1) {
+          const base = index * 4;
+          const gray = (0.299 * pixels[base] + 0.587 * pixels[base + 1] + 0.114 * pixels[base + 2]) / 255;
+          logFrame[index] = Math.log(gray + epsilon);
+        }
+        return logFrame;
+      }
+
+      function seek(video, time) {
+        return new Promise((resolve, reject) => {
+          let timeoutId = 0;
+          const done = () => {
+            window.clearTimeout(timeoutId);
+            video.removeEventListener("seeked", done);
+            resolve();
+          };
+          video.addEventListener("seeked", done, { once: true });
+          video.currentTime = Math.min(time, Math.max(video.duration - 0.001, 0));
+          timeoutId = window.setTimeout(() => reject(new Error("video seek timed out")), 10000);
+        });
+      }
+
+      async function decodeFrames(file) {
+        const video = $("video");
+        const url = URL.createObjectURL(file);
+        video.src = url;
+        await new Promise((resolve, reject) => {
+          video.onloadedmetadata = resolve;
+          video.onerror = () => reject(new Error("could not load video metadata"));
+        });
+        const fps = numberValue("sample-fps");
+        const maxFrames = numberValue("max-frames");
+        if (!Number.isFinite(fps) || fps <= 0 || !Number.isFinite(maxFrames) || maxFrames < 2) {
+          throw new Error("sampling FPS and max frames must be valid");
+        }
+        const sourceWidth = video.videoWidth;
+        const sourceHeight = video.videoHeight;
+        const maxAnalysisWidth = numberValue("analysis-width");
+        if (!Number.isFinite(maxAnalysisWidth) || maxAnalysisWidth < 64) {
+          throw new Error("analysis width must be at least 64");
+        }
+        const scale = Math.min(1, maxAnalysisWidth / sourceWidth);
+        const width = Math.max(1, Math.round(sourceWidth * scale));
+        const height = Math.max(1, Math.round(sourceHeight * scale));
+        const duration = video.duration;
+        const count = Math.max(2, Math.min(Math.floor(duration * fps) + 1, Math.floor(maxFrames)));
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext("2d", { willReadFrequently: true });
+        const frames = [];
+        const logs = [];
+        const times = [];
+        const epsilon = numberValue("epsilon");
+        for (let index = 0; index < count; index += 1) {
+          const time = count === 1 ? 0 : (index / (count - 1)) * Math.max(duration - 0.001, 0);
+          status(`Decoding frame ${index + 1}/${count}...`);
+          await seek(video, time);
+          context.drawImage(video, 0, 0, width, height);
+          const rgba = context.getImageData(0, 0, width, height);
+          frames.push(new Uint8ClampedArray(rgba.data));
+          logs.push(grayscaleLogFromRgba(rgba, epsilon));
+          times.push(time);
+        }
+        URL.revokeObjectURL(url);
+        return { frames, logs, times, width, height, duration };
+      }
+
+      function simulateEvents(logs, times, width, height) {
+        const thresholdOn = numberValue("threshold-on");
+        const thresholdOff = numberValue("threshold-off");
+        if (thresholdOn <= 0 || thresholdOff <= 0) {
+          throw new Error("thresholds must be positive");
+        }
+        const reference = new Float64Array(logs[0]);
+        const events = [];
+        for (let frameIndex = 1; frameIndex < logs.length; frameIndex += 1) {
+          const start = logs[frameIndex - 1];
+          const end = logs[frameIndex];
+          const t0 = times[frameIndex - 1];
+          const t1 = times[frameIndex];
+          const dt = t1 - t0;
+          for (let y = 0; y < height; y += 1) {
+            for (let x = 0; x < width; x += 1) {
+              const index = y * width + x;
+              if (end[index] > start[index]) {
+                while (end[index] - reference[index] >= thresholdOn - 1e-12) {
+                  const target = reference[index] + thresholdOn;
+                  const fraction = (target - start[index]) / (end[index] - start[index]);
+                  events.push({ t: Math.round((t0 + Math.max(0, Math.min(1, fraction)) * dt) * 1000000), x, y, p: 1 });
+                  reference[index] = target;
+                }
+              } else if (end[index] < start[index]) {
+                while (reference[index] - end[index] >= thresholdOff - 1e-12) {
+                  const target = reference[index] - thresholdOff;
+                  const fraction = (target - start[index]) / (end[index] - start[index]);
+                  events.push({ t: Math.round((t0 + Math.max(0, Math.min(1, fraction)) * dt) * 1000000), x, y, p: -1 });
+                  reference[index] = target;
+                }
+              }
+            }
+          }
+        }
+        events.sort((a, b) => a.t - b.t || a.y - b.y || a.x - b.x || a.p - b.p);
+        return events;
+      }
+
+      function lowerBoundEvents(events, timeUs) {
+        let low = 0;
+        let high = events.length;
+        while (low < high) {
+          const mid = Math.floor((low + high) / 2);
+          if (events[mid].t < timeUs) low = mid + 1;
+          else high = mid;
+        }
+        return low;
+      }
+
+      function accumulate(events, startUs, endUs, width, height) {
+        const positive = new Uint16Array(width * height);
+        const negative = new Uint16Array(width * height);
+        const startIndex = lowerBoundEvents(events, startUs);
+        for (let eventIndex = startIndex; eventIndex < events.length; eventIndex += 1) {
+          const event = events[eventIndex];
+          if (event.t >= endUs) break;
+          const index = event.y * width + event.x;
+          if (event.p > 0) positive[index] += 1;
+          else negative[index] += 1;
+        }
+        return { positive, negative };
+      }
+
+      function renderCurrentFrame() {
+        if (!state.frames.length) return;
+        const frameIndex = Number($("preview-index").value);
+        const width = state.width;
+        const height = state.height;
+        drawImageData($("input-canvas"), state.frames[frameIndex], width, height);
+        const centerUs = Math.round(state.times[frameIndex] * 1000000);
+        const windowUs = Math.round(numberValue("window-ms") * 1000);
+        const counts = accumulate(state.events, centerUs, centerUs + windowUs, width, height);
+        const eventPixels = new Uint8ClampedArray(width * height * 4);
+        const overlayPixels = new Uint8ClampedArray(state.frames[frameIndex]);
+        for (let index = 0; index < width * height; index += 1) {
+          const base = index * 4;
+          const on = counts.positive[index] > 0;
+          const off = counts.negative[index] > 0;
+          let r = 0;
+          let g = 0;
+          let b = 0;
+          if (on && off) {
+            r = 255; g = 255; b = 255;
+          } else if (on) {
+            r = 255;
+          } else if (off) {
+            b = 255;
+          }
+          eventPixels[base] = r;
+          eventPixels[base + 1] = g;
+          eventPixels[base + 2] = b;
+          eventPixels[base + 3] = 255;
+          if (on || off) {
+            overlayPixels[base] = Math.round(0.35 * overlayPixels[base] + 0.65 * r);
+            overlayPixels[base + 1] = Math.round(0.35 * overlayPixels[base + 1] + 0.65 * g);
+            overlayPixels[base + 2] = Math.round(0.35 * overlayPixels[base + 2] + 0.65 * b);
+          }
+        }
+        drawImageData($("event-canvas"), eventPixels, width, height);
+        drawImageData($("overlay-canvas"), overlayPixels, width, height);
+        updateFrameReadout(frameIndex);
+      }
+
+      function updateStats() {
+        const total = state.events.length;
+        const on = state.events.filter((event) => event.p > 0).length;
+        const off = total - on;
+        $("total-events").textContent = total.toLocaleString();
+        $("on-events").textContent = on.toLocaleString();
+        $("off-events").textContent = off.toLocaleString();
+        $("event-rate").textContent = state.duration > 0 ? `${Math.round(total / state.duration).toLocaleString()}/s` : "0/s";
+      }
+
+      function clearDownloadUrls() {
+        for (const url of state.downloadUrls) {
+          URL.revokeObjectURL(url);
+        }
+        state.downloadUrls = [];
+      }
+
+      function downloadBlob(name, type, content) {
+        const url = URL.createObjectURL(new Blob([content], { type }));
+        state.downloadUrls.push(url);
+        const link = document.createElement("a");
+        link.download = name;
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      }
+
+      function makeDownloads() {
+        const holder = $("downloads");
+        holder.innerHTML = "";
+        if (!state.events.length) return;
+        const exportLimit = Math.floor(numberValue("export-limit"));
+        const canExportEvents = state.events.length <= exportLimit;
+        const csvButton = document.createElement("button");
+        csvButton.type = "button";
+        csvButton.textContent = canExportEvents ? "Download events.csv" : `CSV disabled above ${exportLimit.toLocaleString()} events`;
+        csvButton.disabled = !canExportEvents;
+        csvButton.addEventListener("click", () => {
+          const lines = new Array(state.events.length + 1);
+          lines[0] = "t_us,x,y,p";
+          for (let index = 0; index < state.events.length; index += 1) {
+            const event = state.events[index];
+            lines[index + 1] = `${event.t},${event.x},${event.y},${event.p}`;
+          }
+          downloadBlob("events.csv", "text/csv", lines.join("\n"));
+        });
+        holder.appendChild(csvButton);
+
+        const jsonButton = document.createElement("button");
+        jsonButton.type = "button";
+        jsonButton.textContent = canExportEvents ? "Download events.json" : `JSON disabled above ${exportLimit.toLocaleString()} events`;
+        jsonButton.disabled = !canExportEvents;
+        jsonButton.addEventListener("click", () => {
+          downloadBlob(
+            "events.json",
+            "application/json",
+            JSON.stringify({
+              width: state.width,
+              height: state.height,
+              duration: state.duration,
+              events: state.events
+            })
+          );
+        });
+        holder.appendChild(jsonButton);
+
+        const pngButton = document.createElement("button");
+        pngButton.type = "button";
+        pngButton.textContent = "Download overlay.png";
+        pngButton.addEventListener("click", () => {
+          const link = document.createElement("a");
+          link.download = "overlay.png";
+          link.href = $("overlay-canvas").toDataURL("image/png");
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+        });
+        holder.appendChild(pngButton);
+      }
+
+      function syncRangeControls() {
+        const ranges = document.querySelectorAll("#event-camera-lab input[type='range'][data-sync]");
+        for (const range of ranges) {
+          const number = $(range.dataset.sync);
+          if (!number) continue;
+          range.value = number.value;
+          range.addEventListener("input", () => {
+            number.value = range.value;
+            if (number.id === "window-ms" && state.frames.length) {
+              renderCurrentFrame();
+            }
+            if (number.id === "sample-fps" && state.playTimer) {
+              stopPlayback();
+              $("play").click();
+            }
+          });
+          number.addEventListener("input", () => {
+            const value = Number(number.value);
+            const minimum = Number(range.min);
+            const maximum = Number(range.max);
+            if (Number.isFinite(value)) {
+              range.value = String(Math.max(minimum, Math.min(maximum, value)));
+            }
+            if (number.id === "window-ms" && state.frames.length) {
+              renderCurrentFrame();
+            }
+            if (number.id === "sample-fps" && state.playTimer) {
+              stopPlayback();
+              $("play").click();
+            }
+          });
+        }
+      }
+
+      $("run").addEventListener("click", async () => {
+        try {
+          const file = $("video-file").files[0];
+          if (!file) throw new Error("choose a video first");
+          stopPlayback();
+          clearDownloadUrls();
+          $("run").disabled = true;
+          status("Loading video...");
+          const decoded = await decodeFrames(file);
+          Object.assign(state, decoded);
+          status("Simulating events...");
+          state.events = simulateEvents(state.logs, state.times, state.width, state.height);
+          $("preview-index").max = String(state.frames.length - 1);
+          $("preview-index").value = "0";
+          updateStats();
+          renderCurrentFrame();
+          makeDownloads();
+          status(`Done. Processed ${state.frames.length} sampled frames at ${state.width}x${state.height}.`);
+        } catch (error) {
+          status(error instanceof Error ? error.message : String(error), true);
+        } finally {
+          $("run").disabled = false;
+        }
+      });
+
+      $("preview-index").addEventListener("input", () => {
+        stopPlayback();
+        renderCurrentFrame();
+      });
+      $("window-ms").addEventListener("change", () => {
+        renderCurrentFrame();
+      });
+      $("previous-frame").addEventListener("click", () => {
+        stopPlayback();
+        setFrame(Number($("preview-index").value) - 1);
+      });
+      $("next-frame").addEventListener("click", () => {
+        stopPlayback();
+        setFrame(Number($("preview-index").value) + 1);
+      });
+      $("play").addEventListener("click", () => {
+        if (!state.frames.length) {
+          status("Run the simulation before playback.", true);
+          return;
+        }
+        if (state.playTimer) {
+          stopPlayback();
+          return;
+        }
+        const sampleFps = Math.max(1, numberValue("sample-fps"));
+        const speed = Math.max(0.25, numberValue("play-speed"));
+        const intervalMs = Math.max(16, 1000 / (sampleFps * speed));
+        $("play").textContent = "Pause";
+        state.playTimer = window.setInterval(() => {
+          const current = Number($("preview-index").value);
+          const maximum = state.frames.length - 1;
+          if (current >= maximum) {
+            setFrame(0);
+          } else {
+            setFrame(current + 1);
+          }
+        }, intervalMs);
+      });
+      $("play-speed").addEventListener("change", () => {
+        if (state.playTimer) {
+          stopPlayback();
+          $("play").click();
+        }
+      });
+      $("clear").addEventListener("click", () => {
+        stopPlayback();
+        clearDownloadUrls();
+        state.frames = [];
+        state.logs = [];
+        state.times = [];
+        state.events = [];
+        for (const id of ["input-canvas", "event-canvas", "overlay-canvas"]) {
+          const canvas = $(id);
+          canvas.width = 1;
+          canvas.height = 1;
+          canvas.getContext("2d").clearRect(0, 0, 1, 1);
+        }
+        $("downloads").innerHTML = "";
+        $("preview-index").max = "0";
+        $("preview-index").value = "0";
+        updateFrameReadout(0);
+        updateStats();
+        status("Cleared. Upload an MP4, then run the simulation.");
+      });
+      syncRangeControls();
+    })();
+  </script>
+</div>
+
+</body>
+</html>
